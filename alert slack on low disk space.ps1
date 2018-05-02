@@ -1,5 +1,6 @@
 Set-StrictMode -Version Latest
 
+
 # find out current working directory
 function Get-ScriptDirectory
 {
@@ -8,7 +9,12 @@ function Get-ScriptDirectory
 # gobal variables
 $GlobalFlagPath = Get-ScriptDirectory | Join-Path -ChildPath "flag.txt"
 $GlobalFlag = "messageAlreadySent"
-$SlackWebhook = "https://hooks.slack.com/services/<INSERT YOUR OWN WEBHOOK HERE>"
+
+# --- Slack WebHook ---
+# Define your SlackWebHook with the below line
+# $SlackWebhook = "https://hooks.slack.com/services/<INSERT YOUR OWN WEBHOOK HERE>"
+# alternatively import keys from a separate file. Comment out below if using your own as defined above
+. .\SlackWebHooks.ps1
 
 # Checks flag file for e.g. "messageAlreadySent". Returns true/false
 function Get-Message-Already-Sent ([string]$FlagPath=$GlobalFlagPath, [string]$Flag=$GlobalFlag) {
@@ -65,7 +71,7 @@ foreach ($disk in Get-WmiObject Win32_LogicalDisk) {
                     -colour "`#fb0e1f"
     }
     # If < 10GB, send message if not already sent, then record we've sent it
-    ElseIf ($freespace -le 40 -and -not (Get-Message-Already-Sent)) {
+    ElseIf ($freespace -le 10 -and -not (Get-Message-Already-Sent)) {
         Send-Slack  -mainMessage "Caution. The RPS hard drive $diskName has $freespace of GB free space at the moment. :thinking_face:" `
                     -webHook $SlackWebhook `
                     -colour "`#ff8c00"

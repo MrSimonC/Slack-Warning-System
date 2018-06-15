@@ -11,6 +11,7 @@ Start-Transcript -path $LogPath -append
 Write-Output "Script is running ok"
 
 # global variables
+$server = ""  # put an optional server name here for inclusion in slack alert text
 $GlobalFlagPath = Get-ScriptDirectory | Join-Path -ChildPath "flag.txt"
 $GlobalFlag = "messageAlreadySent"
 
@@ -70,14 +71,14 @@ foreach ($disk in Get-WmiObject Win32_LogicalDisk) {
 
     # If < 5GB, send message
     if ($freespace -le 5) {
-        Send-Slack  -mainMessage ":warning: Critical. The hard drive $diskName has $freespace GB of free space at the moment. :worried:" `
+        Send-Slack  -mainMessage ":warning: Critical. The $server hard drive $diskName has $freespace GB of free space at the moment. :worried:" `
                     -webHook $SlackWebhook `
                     -colour "`#fb0e1f"
         Write-Output "Critical Alert sent to slack for $diskName has with $freespace GB"
     }
     # If < 10GB, send message if not already sent today, then record we've sent it
     ElseIf ($freespace -le 10 -and -not (Get-Message-Already-Sent)) {
-        Send-Slack  -mainMessage "Caution. The hard drive $diskName has $freespace GB of free space at the moment. :thinking_face:" `
+        Send-Slack  -mainMessage "Caution. The $server hard drive $diskName has $freespace GB of free space at the moment. :thinking_face:" `
                     -webHook $SlackWebhook `
                     -colour "`#ff8c00"
         Set-Message-Already-Sent
@@ -91,7 +92,7 @@ $min = Get-Date '09:00'
 $max = Get-Date '09:09'
 $now = Get-Date
 if ($min.TimeOfDay -le $now.TimeOfDay -and $max.TimeOfDay -ge $now.TimeOfDay -and $min.DayOfWeek -eq "Monday") {
-    Send-Slack  -mainMessage "Morning everyone! Just to let you know I'm up and monitoring the hard drive free space." `
+    Send-Slack  -mainMessage "Morning everyone! Just to let you know I'm up and monitoring the $server hard drive free space." `
                 -webHook $SlackWebhook `
                 -colour "`#0efb1c"
     Write-Output "Messaged slack a welcome online Monday message"

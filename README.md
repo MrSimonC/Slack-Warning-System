@@ -17,7 +17,7 @@ Needing a free, customisable way of monitoring when a server's drive space gets 
 ## Setup
 
 * Create an incomming webhook in your team slack for a channel of your choice
-* Update the script with this webhook url
-* Install the script on a server you want to monitor, in its own folder
+* Update `SlackWebHooks.ps1` with this webhook url
+* Install both .ps1 scripts on a server you want to monitor, in its own folder (e.g. `C:\Program Files\Slack Warning System`)
 * Create a Windows Task Schedule to run every 10 minutes
   * Point the task to start in the folder containing the script (obmit the quotes in windows scheduler in the "Actions", "Start in (optional)" field)

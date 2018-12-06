@@ -6,6 +6,11 @@ function Get-ScriptDirectory
     Split-Path $script:MyInvocation.MyCommand.Path
 }
 
+# get ip address
+function Get-IPAddress-Of-LocalHost() {
+    return (Test-Connection -ComputerName (hostname) -Count 1  | Select-Object -ExpandProperty IPV4Address).IPAddressToString
+}
+
 $LogPath = Get-ScriptDirectory | Join-Path -ChildPath "log.txt"
 Start-Transcript -path $LogPath -append
 Write-Output "Script is running ok"
@@ -55,6 +60,9 @@ function Send-Slack ([string]$mainMessage, [string]$webHook, [string]$colour
     -Uri $webHook | Out-Null
 }
 
+[array]$diskSummaryArray = $null
+$ip = Get-IPAddress-Of-LocalHost
+
 # check each disk for low space
 foreach ($disk in Get-WmiObject Win32_LogicalDisk) {
     $diskName = $disk | Select-Object Name  | Select-Object -ExpandProperty "Name"
@@ -67,14 +75,17 @@ foreach ($disk in Get-WmiObject Win32_LogicalDisk) {
     }
     
     # for logging
-    Write-Output "$diskName has $freespace GB of free space"
+    # Write-Output "$diskName has $freespace GB of free space"
+
+    # for monday summary
+    $diskSummaryArray += "$diskName` $freespace`GB"
 
     # If < 5GB, send message
     if ($freespace -le 5) {
-        Send-Slack  -mainMessage ":warning: Critical. The $server hard drive $diskName has $freespace GB of free space at the moment. :worried:" `
+        Send-Slack  -mainMessage ":warning: Critical. The $server hard drive $diskName has $freespace GB of free space (on $env:computername / $ip) at the moment. :worried:" `
                     -webHook $SlackWebhook `
                     -colour "`#fb0e1f"
-        Write-Output "Critical Alert sent to slack for $diskName has with $freespace GB"
+        Write-Output "Critical Alert sent to slack for $diskName has with $freespace GB (on $env:computername / $ip)"
     }
     # If < 10GB, send message if not already sent today, then record we've sent it
     ElseIf ($freespace -le 10 -and -not (Get-Message-Already-Sent)) {
@@ -85,14 +96,14 @@ foreach ($disk in Get-WmiObject Win32_LogicalDisk) {
         Write-Output "Amber Alert sent to slack for $diskName has with $freespace GB and flag set to not send again today."
     }
 }
-
 # --- Checks ---
 # Tell slack that we're online Monday 09:00 to 09:09 (as this script should run every 10 mins)
 $min = Get-Date '09:00'
 $max = Get-Date '09:09'
 $now = Get-Date
+[string]$diskSummary = $diskSummaryArray -join ", "
 if ($min.TimeOfDay -le $now.TimeOfDay -and $max.TimeOfDay -ge $now.TimeOfDay -and $min.DayOfWeek -eq "Monday") {
-    Send-Slack  -mainMessage "Morning everyone! Just to let you know I'm up and monitoring the $server hard drive free space." `
+    Send-Slack  -mainMessage "Morning everyone! Just to let you know I'm up and monitoring the $server hard drive free space. Free space: $diskSummary." `
                 -webHook $SlackWebhook `
                 -colour "`#0efb1c"
     Write-Output "Messaged slack a welcome online Monday message"

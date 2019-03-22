@@ -1,1 +1,6 @@
 log.txt
+geological_society_live/clientSpecific.ps1
+geological_society_cms/clientSpecific.ps1
+rps/clientSpecific.ps1
+SendNotification-Test.ps1
+Test/
